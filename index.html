@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Сеул, 31 октября - 1 ноября</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Сеул">
+<meta name="theme-color" content="#1CA4D8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#16181d;--mute:#5d6470;--line:#d9dde3;--food:#EF7C1C;--c:#1CA4D8}
+@media (prefers-color-scheme:dark){:root{--bg:#101216;--card:#1a1d23;--ink:#eceef2;--mute:#9aa3b0;--line:#2c313a}}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Onest,system-ui,sans-serif}
+#top{position:sticky;top:0;z-index:1000;background:var(--bg);padding-top:env(safe-area-inset-top)}
+header{display:flex;align-items:center;gap:8px;padding:8px 12px}
+header h1{font-size:18px;margin:0;font-weight:800}
+#tabs{display:flex;gap:6px;margin-left:auto}
+#tabs button{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 11px;font:600 14px Onest,system-ui,sans-serif}
+#tabs button[aria-pressed=true]{border-color:var(--tc);background:var(--tc);color:#fff}
+#mapwrap{position:relative}
+#map{height:40dvh;min-height:230px;background:#dfe5ea}
+.mapbtns{position:absolute;top:8px;left:8px;z-index:500;display:flex;gap:6px;align-items:center}
+.mapbtns button,.mapbtns label{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:600 13px Onest,system-ui,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+#next{padding:7px 12px;font-weight:600;font-size:14px;min-height:34px}
+#list{list-style:none;margin:0;padding:8px 12px 90px}
+.stop{display:grid;grid-template-columns:34px 1fr;gap:0 10px;position:relative;padding-bottom:10px;scroll-margin-top:calc(var(--top,300px) + 8px)}
+.stop::before{content:"";position:absolute;left:16px;top:30px;bottom:-2px;width:4px;background:var(--c);border-radius:2px}
+.stop:last-child::before{display:none}
+.dot{width:32px;height:32px;border-radius:50%;border:3px solid var(--c);background:var(--card);color:var(--ink);font:800 13px/1 Onest,system-ui,sans-serif;padding:0;position:relative;z-index:1}
+.stop.done .dot{background:var(--c);color:#fff}
+.stop.done details{opacity:.6}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px}
+details>:not(summary){margin:0 12px 10px}
+summary{list-style:none;cursor:pointer;padding:10px 12px;display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+.t{font-variant-numeric:tabular-nums;font-weight:800;color:var(--c)}
+summary b{font-weight:700}
+.ko{width:100%;color:var(--mute);font-size:13px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:14px}
+dt{color:var(--mute)}
+dd{margin:0}
+h4{margin:12px 12px 4px;font-size:14px}
+ul.food{padding-left:18px;font-size:14px}
+ul.food li{margin-bottom:4px}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+.btns a,.btns button{border-radius:8px;padding:8px 10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-decoration:none;font:600 13px Onest,system-ui,sans-serif}
+.btns a.go{background:var(--c);border-color:var(--c);color:#fff}
+a{color:inherit}
+.pin{width:100%;height:100%;border-radius:50%;border:3px solid var(--c);background:#fff;color:#111;font:800 12px/20px Onest,system-ui,sans-serif;text-align:center}
+.pin.done{background:var(--c);color:#fff}
+.pin.food{border-color:var(--food);font-size:11px;line-height:18px}
+.leaflet-popup-content{font:14px/1.4 Onest,system-ui,sans-serif;margin:10px 12px}
+#info{padding:8px 12px 90px}
+#info details{margin-bottom:8px}
+#info details>*:not(summary){margin:0 12px 10px}
+#info p,#info li{font-size:14px}
+#taxi{position:fixed;inset:0;z-index:2000;background:#000e;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px}
+#taxi .big{font-size:40px;font-weight:800;line-height:1.2}
+#taxi button{border:0;border-radius:10px;padding:12px 22px;font:700 16px Onest,system-ui,sans-serif}
+:focus-visible{outline:3px solid #2a6df4;outline-offset:2px}
+</style>
+</head>
+<body>
+<div id="top">
+  <header>
+    <h1>Сеул</h1>
+    <nav id="tabs">
+      <button data-t="1" style="--tc:#1CA4D8">День 1</button>
+      <button data-t="2" style="--tc:#00A84D">День 2</button>
+      <button data-t="i" style="--tc:#5d6470">Памятка</button>
+    </nav>
+  </header>
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div class="mapbtns">
+      <button id="loc">Где я</button>
+      <button id="fit">Весь день</button>
+      <label><input type="checkbox" id="foodtog"> Еда</label>
+    </div>
+  </div>
+  <div id="next"></div>
+</div>
+
+<ol id="list"></ol>
+
+<section id="info" hidden>
+  <details open><summary><b>Транспорт</b></summary>
+    <ul>
+      <li><b>Навигация.</b> В Корее Google Maps не строит пешие маршруты. Используйте Naver Map: кнопки «Пешком» и «Метро и автобус» открывают его с маршрутом от вашего места. Скачайте приложение и оффлайн-карту Сеула заранее.</li>
+      <li><b>T-money.</b> Физическая карта из магазинов GS25, CU, 7-Eleven или в аэропорту. Apple Pay с T-money в Корее пока не работает.</li>
+      <li><b>Поезд AREX.</b> Express: 43 минуты, ₩11 000, отдельный QR-билет в кассе или автомате, T-money не работает. Обычный поезд: 59-66 минут, ₩4 750, по T-money, каждые 10-15 минут. Express ходит раз в 30-45 минут, если до него больше 20 минут, берите обычный.</li>
+      <li><b>Вылет в воскресенье.</b> На Seoul Station в 17:45, в аэропорту не позже 18:50, рейс в 20:50. Последний метро проверяйте в приложении Subway Korea.</li>
+    </ul>
+  </details>
+  <details><summary><b>Билеты</b></summary>
+    <ul>
+      <li><b>Leeum:</b> бронь на сайте музея, Feather Room ₩18 000. Бронируйте заранее.</li>
+      <li><b>Дворец:</b> ₩3 000, касса у входа. <b>Канатка на Намсан:</b> ₩15 000 туда-обратно, касса у нижней станции. Билет в башню ₩21 000 не нужен.</li>
+      <li><b>Onmigwan, Shin Ramyun:</b> очередь через приложение Catch Table или на месте.</li>
+      <li><b>Бесплатно:</b> Букчон, Starfield Library, Bongeunsa, Cheonggyecheon, DOOTA, DDP снаружи, терраса Намсана.</li>
+    </ul>
+  </details>
+  <details><summary><b>Полезное</b></summary>
+    <ul>
+      <li><b>Возврат налога:</b> нужен физический паспорт. Olive Young возвращает налог на кассе.</li>
+      <li><b>Косметика в самолёт:</b> жидкости только по 100 мл и меньше. Большие флаконы докупайте в duty free после досмотра.</li>
+      <li><b>Марафон 1 ноября:</b> дороги в центре Сеула могут быть перекрыты до 13:30. Метро ходит как обычно.</li>
+      <li><b>Букчон:</b> туристов пускают только с 10:00 до 17:00.</li>
+      <li><b>Оффлайн:</b> страница и карта грузятся из интернета, нужен eSIM или Wi-Fi.</li>
+      <li><b>Точки с пометкой «примерная»</b> проверьте на месте по карте.</li>
+    </ul>
+  </details>
+</section>
+
+<div id="taxi" hidden>
+  <div id="taxi-ko" class="big"></div>
+  <div id="taxi-en"></div>
+  <button id="taxi-x">Закрыть</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+// Еда: запасные места. d = в какие дни показывать на карте
+const F={
+ parisiens:{n:"Café Les Parisiens",ko:"까페 레빠리지엥 명동점",ll:[37.5630236,126.984104],w:"Розовое парижское кафе, круассаны, кофе",h:"8:00-22:00",d:[2]},
+ figments:{n:"Figments",ll:[37.5664986,126.9835552],w:"Круассаны, багет, кофе в Euljiro",h:"Сб 8:00-22:30, вс 8:00-19:00",d:[1,2]},
+ papercrane:{n:"PaperCrane Bakery",ll:[37.5638644,126.9921217],w:"Круассаны, круффины, сэндвичи",h:"7:30-22:00",d:[1,2]},
+ tlj:{n:"Tous Les Jours",ll:[37.5613549,126.9860417],w:"Сеть пекарен: булки, сэндвичи, кофе",h:"Сб 7:00-22:00, вс 7:30-22:00",d:[1,2]},
+ kyoja:{n:"Myeongdong Kyoja",ll:[37.5610151,126.9860829],w:"Лапша кальгуксу и пельмени манду, место из гида Мишлен, очередь идёт быстро",h:"10:30-21:00",d:[1]},
+ yeji:{n:"Yeji Sikdang",ll:[37.564594,126.9845345],w:"Домашняя корейская еда ₩10-20 тыс., только наличные",h:"Часы проверьте на месте",d:[1]},
+ chick:{n:"Chick Gimbap",ll:[37.5630328,126.9856018],w:"Обеденный сет около ₩8 000, заказ через автомат",h:"Часы проверьте на месте",d:[1]},
+ baek:{n:"Baekmidang Samcheong",ll:[37.5800908,126.9802258],w:"Кафе у дворца с матча-латте, два этажа",h:"Сб 10:00-21:00",d:[1]},
+ queens:{n:"The Queen's Bakery",ll:[37.579883,126.9819314],w:"Пекарня с балконом, булки и сэндвичи",h:"10:00-21:00",d:[1]},
+ osulloc:{n:"Osulloc Tea House Bukchon",ll:[37.5810441,126.984653],w:"Чайный дом: матча-латте, мягкое мороженое, вафли в форме крыш Букчона",h:"Сб 10:00-20:00",d:[1]},
+ onion:{n:"Cafe Onion Anguk",ll:[37.5776235,126.9865541],w:"Знаменитая пекарня в старом доме, на вынос быстрее, чем внутрь",h:"Сб 9:00-22:00",d:[1]},
+ lowfive:{n:"Low Five Anguk",ll:[37.578646,126.985561],w:"Пицца и паста, рейтинг 5,0",h:"Закрыт по понедельникам, часы проверьте",d:[1]},
+ taeg:{n:"Taegeukdang Insadong",ll:[37.5734011,126.9859168],w:"Пекарня с 1946 года, мороженое в вафле",h:"11:00-20:00",d:[1]},
+ nakwon:{n:"Nakwon",ll:[37.5733648,126.9900717],w:"Кафе в стиле вокзала, торты развозят паровозики",h:"11:00-22:00",d:[1]},
+ langsom:{n:"Hanok Langsom Ikseon",ll:[37.5731833,126.9898614],w:"Кафе в старом доме, десерты",h:"Сб 9:00-22:00",d:[1]},
+ menshoku:{n:"Menshoku (COEX)",ll:[37.5103325,127.058494],w:"Рамен, около ₩34 000 на двоих",h:"Часы проверьте на месте",d:[2]},
+ lilion:{n:"Lilion",ll:[37.5373527,127.0029074],w:"Булочная у Leeum: багет-сэндвичи, круассаны",h:"Вс 9:00-19:00",d:[2]},
+ butty:{n:"Butty Sandwich House",ll:[37.5407442,127.0602133],w:"Сэндвичи и панини в Сонсу",h:"9:00-19:00",d:[2]},
+ unlign:{n:"UNLIGN",ll:[37.5396692,127.0612525],w:"Кафе: матча и сэндвичи",h:"9:00-20:00",d:[2]}
+};
+// Маршрут по дням
+const D={
+1:{color:"#1CA4D8",stops:[
+ {t:"10:15",n:"Отель Step Inn Myeongdong 1",ll:[37.5641021,126.9853711],w:"Оставить сумки на стойке. До этого: прилёт 07:25, поезд AREX до Seoul Station (см. «Памятка»), метро линия 4, две остановки до Myeongdong.",h:"Стойка круглосуточно",ex:"Myeongdong, выход 8, или Euljiro 1-ga, выход 5; 3-5 минут пешком"},
+ {t:"10:20",n:"Завтрак: Café Les Parisiens",ko:"까페 레빠리지엥 명동점",ll:[37.5630236,126.984104],w:"Розовое парижское кафе: круассаны (с яйцом и трюфелем, фисташковый), кофе. 3 минуты от отеля. Рейтинг 4,9.",h:"8:00-22:00",f:["figments","papercrane","tlj"]},
+ {t:"11:15",n:"Намсан: канатная дорога",ko:"남산케이블카",ll:[37.5565908,126.9839744],w:"Холм в центре города с башней N Seoul Tower. Поднимаетесь на канатке, 3 минуты.",h:"10:00-23:00, билеты до 22:30",tk:"₩15 000 туда-обратно, касса у нижней станции. Билет внутрь башни (₩21 000) не нужен.",ex:"Myeongdong, выход 4, затем бесплатный лифт к станции канатки",tip:"По выходным очередь бывает до часа. Запасной вариант: подняться пешком по лестнице, около 30 минут."},
+ {t:"11:35",n:"Терраса N Seoul Tower",ko:"N서울타워",ll:[37.5511694,126.9882266],w:"Бесплатные террасы с видом на весь город, замочки любви. Спуск пешком через парк с осенней листвой занимает около 30 минут."},
+ {t:"13:00",n:"Обед: Hongojib",ll:[37.5655325,126.9836681],w:"Корейское барбекю: у каждого место с личным грилем, заказ на сенсорном экране. Сет около ₩14 300. Рейтинг 4,8.",h:"11:00-00:30",f:["kyoja","yeji","chick"]},
+ {t:"14:25",n:"Дворец Кёнбоккун",ko:"경복궁",ll:[37.579617,126.977041],w:"Главный королевский дворец: ворота, тронный зал, пруд с павильоном. Хватит 50 минут прогулкой, всё осматривать не нужно.",h:"9:00-18:00, последний вход 17:00, вторник закрыто",tk:"₩3 000, касса у входа",ex:"Gyeongbokgung (линия 3), выход 5. От отеля: линия 4 до Chungmuro, пересадка на линию 3, около 25 минут"},
+ {t:"15:25",n:"Nuldam Space",ll:[37.5780502,126.9798327],w:"Кафе у дворца: кофе и письмо себе в будущее, его запечатывают сургучом. 30 минут.",h:"10:00-21:30",ex:"5-10 минут пешком от восточных ворот дворца",f:["baek","queens"]},
+ {t:"16:10",n:"Букчон (деревня ханок)",ko:"북촌한옥마을",ll:[37.5826,126.9835],w:"Жилой район старых корейских домов (ханоков): узкие улочки на склоне, вид на башню. Это жилые дома, ведите себя тихо.",h:"Туристам с 10:00 до 17:00 (штраф ₩100 000 вне часов)",ex:"Anguk (линия 3), выход 2, если идёте снизу. Точка примерная",tip:"Матча по пути: Osulloc Tea House.",f:["osulloc"]},
+ {t:"17:12",n:"Beautiful Store (комиссионка)",ko:"아름다운가게 안국점",ll:[37.578743,126.9850385],w:"Комиссионка с одеждой из вторых рук. Обычные вещи около ₩4 000, зимние пальто ₩12-15 тыс. Больше женской одежды, размеры мелкие.",h:"Сб и вс 10:30-18:00"},
+ {t:"17:45",n:"Ужин: Onmigwan",ll:[37.5780373,126.9860906],w:"Корейская кухня: босам (варёная свинина с кимчи), сеты около ₩15 000. Рейтинг 4,6. В 100 метрах от Beautiful Store.",h:"11:00-22:00",tip:"Очередь через приложение Catch Table, ждать около 15 минут.",f:["onion","lowfive"]},
+ {t:"18:40",n:"Инсадон: Ssamziegil",ko:"쌈지길",ll:[37.5743024,126.9849036],w:"Сувенирный дворик со спиральным подъёмом: керамика, чай, веера, поделки. Рядом Insadong Vintage (винтажная одежда, до 22:00).",h:"10:30-20:30",f:["taeg"]},
+ {t:"19:25",n:"Soha Salt Pond (Ikseon-dong)",ll:[37.5730739,126.9896949],w:"Кафе-пекарня с булочками с солью, обычно очередь. Рейтинг 4,5.",h:"9:00-20:30",ex:"Jongno 3-ga, выход 4",f:["nakwon","langsom"]},
+ {t:"19:45",n:"Эульджиро: неоновые переулки",ll:[37.5663,126.9926],w:"Старые кварталы с неоновыми вывесками. Идёте пешком в Мёндон (около 1,4 км), по пути заглядываете в переулки, 10-15 минут.",ex:"Euljiro 3-ga (линии 2 и 3). Точка станции"},
+ {t:"20:10",n:"Olive Young Myeongdong Town",ko:"올리브영 명동타운",ll:[37.563946,126.9851624],w:"Огромный магазин корейской косметики. Налог возвращают на кассе по паспорту.",h:"10:00-22:30",ex:"Myeongdong, выход 8, или Euljiro 1-ga, выход 5",tip:"Покупки можно занести в отель, он в соседнем доме."},
+ {t:"20:55",n:"Beauty Lab (аптечная косметика)",ll:[37.5622006,126.9857311],w:"Аптека с косметикой: бесплатный анализ кожи, помогают оформить tax free.",h:"9:00-23:30"},
+ {t:"21:35",n:"Cheonggyecheon",ko:"청계천",ll:[37.5691015,126.9786692],w:"Подсвеченная набережная ручья в центре, бесплатно, людей немного. Идёте на восток вдоль воды около 2,5 км до Dongdaemun.",h:"Круглосуточно",ex:"От Beauty Lab пешком 15 минут до ручья у Cheonggye Plaza"},
+ {t:"22:10",n:"Gwangjang Market (по желанию)",ko:"광장시장",ll:[37.5700385,126.9996038],w:"Старейший рынок: блины из маша (бин-дэ-ток), гимбап. Рестораны до 23:00, палатки по вечерам работают по-разному.",h:"Рестораны до 23:00, палатки проверьте на месте"},
+ {t:"22:30",n:"DOOTA Mall",ko:"두타몰",ll:[37.5688137,127.0087526],w:"Торговый центр трендовой одежды: толстовки, футболки, сувениры. По отзывам, на 5 этаже по паспорту дают купоны, рядом киоск возврата налога.",h:"10:30-00:00"},
+ {t:"23:20",n:"DDP (Dongdaemun Design Plaza)",ko:"동대문디자인플라자",ll:[37.5665256,127.0092236],w:"Футуристичное здание Захи Хадид. Вечером подсветка снаружи, 10 минут на фото.",h:"Внутри до 20:00",ex:"Dongdaemun History and Culture Park (линия 2). Домой: линия 2 до Euljiro 1-ga, 7 минут, дальше пешком. Последний поезд проверьте в Subway Korea"}
+]},
+2:{color:"#00A84D",stops:[
+ {t:"08:00",n:"Завтрак: Figments",ll:[37.5664986,126.9835552],w:"Кафе-пекарня в Euljiro, 300 метров от отеля: круассан с ветчиной и сыром, багет, кофе. Рейтинг 4,8.",h:"Вс 8:00-19:00",f:["parisiens","papercrane","tlj"]},
+ {t:"09:05",n:"Выезд из отеля",ll:[37.5641021,126.9853711],w:"Выписка, сумки с собой. Метро: линия 4 до Samgakji, пересадка на линию 6 до Hangangjin, около 30 минут.",ex:"Myeongdong, Samgakji, Hangangjin (выход 1)"},
+ {t:"10:00",n:"Музей Leeum",ko:"리움미술관",ll:[37.5379389,126.9992749],w:"Музей современного искусства. Главное: комната Feather Room, где идёшь по колено в пуху. 1 час 45 минут.",h:"10:00-18:00, понедельник закрыто",tk:"Feather Room ₩18 000. Нужна бронь на сайте музея, постоянная экспозиция бесплатна по записи.",ex:"Hangangjin (линия 6), выход 1, 5-10 минут пешком",f:["lilion"]},
+ {t:"12:20",n:"Обед: Sotneum (Starfield COEX)",ll:[37.5133578,127.0588175],w:"Рисовые боулы со стейком или осьминогом внутри торгового центра COEX. Рейтинг 4,8.",h:"10:30-22:00",ex:"Из Leeum такси 25-30 минут. Запасной вариант: метро около 45 минут.",tip:"1 ноября в центре марафон, дороги могут быть перекрыты до 13:30. Тогда лучше метро.",f:["menshoku"]},
+ {t:"12:55",n:"Starfield Library",ko:"별마당도서관",ll:[37.5102133,127.0600186],w:"Огромная библиотека внутри COEX Mall со стеллажами до потолка. Вход бесплатный, рядом магазины.",h:"10:30-22:00"},
+ {t:"13:35",n:"Золотые руки Gangnam Style",ll:[37.5123024,127.0607123],w:"Статуя скрещённых рук из клипа. Рядом с входом в COEX, 15 минут на фото.",h:"Круглосуточно"},
+ {t:"13:55",n:"Храм Bongeunsa",ko:"봉은사",ll:[37.514852,127.0573766],w:"Буддийский храм старше тысячи лет среди небоскрёбов: большая территория, огромная статуя Будды, парк с осенней листвой. Бесплатно.",h:"5:00-22:00"},
+ {t:"14:55",n:"Olive Young N Seongsu",ko:"올리브영 N 성수",ll:[37.5441151,127.054556],w:"Большой магазин косметики с зонами для проб. Налог возвращают на кассе по паспорту.",h:"10:00-22:00",ex:"Линия 2 от Samseong до Seongsu (около 22 минут), выход 4",tip:"Рядом поп-ап лапши Shin Ramyun (52 Seongsuil-ro 4-gil, до 30 ноября, 11:00-20:00, очередь через Catch Table). Займёт около 40 минут, по желанию."},
+ {t:"15:25",n:"ADER ERROR Seongsu",ko:"아더에러 성수",ll:[37.5422211,127.0565311],w:"Магазин-инсталляция корейского бренда: одежда и аксессуары. Рейтинг 4,6.",h:"11:00-21:00"},
+ {t:"15:45",n:"MUSINSA Store Seongsu",ko:"무신사 스토어 성수",ll:[37.5415531,127.0563857],w:"Магазин сразу многих корейских брендов: одежда, обувь, косметика.",h:"11:00-22:00"},
+ {t:"16:15",n:"thisisneverthat Seongsu",ko:"디스이즈네버댓 성수",ll:[37.5431463,127.0616649],w:"Популярный корейский стритвир: толстовки, футболки. Магазин на 3 этаже.",h:"11:00-20:00"},
+ {t:"16:40",n:"Raw Coffee Stand",ll:[37.5410457,127.0595253],w:"Кофе на вынос ₩2 500-3 500, рейтинг 4,8.",h:"Вс 10:00-17:00",f:["butty","unlign"]},
+ {t:"17:05",n:"Выезд в аэропорт: Seoul Station",ko:"서울역",ll:[37.5559,126.9723],w:"Линия 2 до City Hall, линия 1 до Seoul Station, около 40 минут, на вокзале в 17:45. Дальше поезд AREX, в аэропорту не позже 18:50. Рейс в 20:50.",ex:"Express ₩11 000 по QR-билету, обычный ₩4 750 по T-money. Точка примерная",tip:"Если до следующего Express больше 20 минут, берите обычный поезд."}
+]}};
+
+const $=s=>document.querySelector(s);
+const K=(d,i)=>d+"-"+i;
+let day=1,done=JSON.parse(localStorage.getItem("seoul-done")||"{}"),markers=[],pos,watch,meC,meM;
+
+const map=L.map("map",{zoomControl:false}).setView([37.5665,126.978],13);
+L.control.zoom({position:"bottomright"}).addTo(map);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19,attribution:"&copy; OpenStreetMap, &copy; CARTO"}).addTo(map);
+const layer=L.layerGroup().addTo(map),foodLayer=L.layerGroup().addTo(map);
+
+const pin=(n,dn)=>L.divIcon({className:"",html:`<div class="pin${dn?" done":""}">${n}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
+const fpin=L.divIcon({className:"",html:'<div class="pin food">🍴</div>',iconSize:[24,24],iconAnchor:[12,12]});
+
+const nav=(ll,n,m)=>`nmap://route/${m}?dlat=${ll[0]}&dlng=${ll[1]}&dname=${encodeURIComponent(n)}&appname=seoul.trip`;
+const gm=ll=>`https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}&travelmode=transit`;
+const nv=q=>`https://map.naver.com/p/search/${encodeURIComponent(q)}`;
+const row=(a,b)=>b?`<dt>${a}</dt><dd>${b}</dd>`:"";
+const a=(href,t,c)=>`<a href="${href}"${c?` class="${c}"`:""}>${t}</a>`;
+
+function foodItem(f){return `<li><b>${f.n}</b>: ${f.w}. <i>${f.h}</i> ${a(nav(f.ll,f.n,"walk"),"Пешком")}</li>`}
+
+function card(s,i){
+  const k=K(day,i);
+  return `<li class="stop${done[k]?" done":""}" data-i="${i}"><button class="dot" aria-label="Отметить: был здесь">${i+1}</button>
+  <details><summary><span class="t">${s.t}</span><b>${s.n}</b>${s.ko?`<span class="ko">${s.ko}</span>`:""}</summary>
+  <p>${s.w}</p>
+  <dl>${row("Часы",s.h)}${row("Билет",s.tk)}${row("Метро",s.ex)}${row("Совет",s.tip)}</dl>
+  <div class="btns">${a(nav(s.ll,s.n,"walk"),"Пешком (Naver)","go")}${a(nav(s.ll,s.n,"public"),"Метро и автобус (Naver)")}${a(gm(s.ll),"Метро (Google)")}${a(nv(s.ko||s.n),"Место в Naver")}${s.ko?`<button data-taxi="${i}">Показать водителю</button>`:""}</div>
+  ${s.f?`<h4>Запасные места поесть рядом</h4><ul class="food">${s.f.map(id=>foodItem(F[id])).join("")}</ul>`:""}
+  </details></li>`;
+}
+
+function render(d){
+  day=d;markers=[];
+  document.documentElement.style.setProperty("--c",D[d].color);
+  layer.clearLayers();foodLayer.clearLayers();
+  const stops=D[d].stops;
+  L.polyline(stops.map(s=>s.ll),{color:D[d].color,weight:4,opacity:.7,dashArray:"1 9",lineCap:"round"}).addTo(layer);
+  stops.forEach((s,i)=>{
+    const m=L.marker(s.ll,{icon:pin(i+1,done[K(d,i)])}).addTo(layer).bindPopup(`<b>${s.t} ${s.n}</b>`);
+    m.on("click",()=>{const li=$("#list").children[i];li.querySelector("details").open=true;li.scrollIntoView({behavior:"smooth",block:"start"})});
+    markers.push(m);
+  });
+  Object.values(F).filter(f=>f.d.includes(d)).forEach(f=>L.marker(f.ll,{icon:fpin}).addTo(foodLayer).bindPopup(`<b>${f.n}</b><br>${f.w}<br><i>${f.h}</i><br>${a(nav(f.ll,f.n,"walk"),"Пешком (Naver)")}`));
+  $("#foodtog").onchange=showFood;showFood();
+  $("#list").innerHTML=stops.map(card).join("");
+  fit();upd();
+}
+const showFood=()=>$("#foodtog").checked?foodLayer.addTo(map):map.removeLayer(foodLayer);
+const fit=()=>map.fitBounds(L.latLngBounds(D[day].stops.map(s=>s.ll)),{padding:[30,30]});
+
+const dist=(p,q)=>{const r=Math.PI/180,x=(q[1]-p[1])*r*Math.cos((p[0]+q[0])/2*r),y=(q[0]-p[0])*r;return 6371000*Math.hypot(x,y)};
+const msg=t=>$("#next").textContent=t;
+function upd(){
+  const i=D[day].stops.findIndex((s,j)=>!done[K(day,j)]);
+  if(i<0)return msg("Все точки дня пройдены");
+  const s=D[day].stops[i];
+  if(!pos)return msg(`Следующая: ${i+1}. ${s.n}`);
+  const d=dist(pos,s.ll);
+  msg(`Следующая: ${i+1}. ${s.n}. ${d<1000?Math.round(d)+" м":(d/1000).toFixed(1)+" км"}, около ${Math.max(1,Math.round(d/80))} мин пешком`);
+}
+
+$("#loc").onclick=()=>{
+  if(!navigator.geolocation)return msg("Геолокация недоступна в этом браузере.");
+  if(watch!=null)return pos&&map.flyTo(pos,16);
+  watch=navigator.geolocation.watchPosition(p=>{
+    const first=!pos;pos=[p.coords.latitude,p.coords.longitude];
+    if(!meC){meC=L.circle(pos,{radius:p.coords.accuracy,color:"#2a6df4",weight:1,fillOpacity:.1}).addTo(map);meM=L.circleMarker(pos,{radius:8,color:"#fff",weight:3,fillColor:"#2a6df4",fillOpacity:1}).addTo(map)}
+    meC.setLatLng(pos).setRadius(p.coords.accuracy);meM.setLatLng(pos);
+    if(first)map.flyTo(pos,16);
+    upd();
+  },()=>{watch=null;msg("Нет доступа к геолокации. Разрешите её для этого сайта: Настройки, Safari, Геопозиция.")},{enableHighAccuracy:true,maximumAge:5000});
+};
+$("#fit").onclick=fit;
+
+$("#list").onclick=e=>{
+  const li=e.target.closest("li.stop");if(!li)return;
+  const i=+li.dataset.i,s=D[day].stops[i];
+  if(e.target.closest(".dot")){
+    const k=K(day,i);done[k]=!done[k];localStorage.setItem("seoul-done",JSON.stringify(done));
+    li.classList.toggle("done",!!done[k]);markers[i].setIcon(pin(i+1,done[k]));upd();return;
+  }
+  const t=e.target.closest("[data-taxi]");
+  if(t){$("#taxi-ko").textContent=s.ko;$("#taxi-en").textContent=s.n;$("#taxi").hidden=false;return}
+  if(e.target.closest("summary")){map.flyTo(s.ll,16,{duration:.6});markers[i].openPopup()}
+};
+$("#taxi-x").onclick=()=>$("#taxi").hidden=true;
+
+const setTop=()=>document.documentElement.style.setProperty("--top",$("#top").offsetHeight+"px");
+function show(t){
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===t));
+  const info=t==="i";
+  $("#mapwrap").hidden=$("#next").hidden=$("#list").hidden=info;$("#info").hidden=!info;
+  if(!info){render(+t);setTimeout(()=>{map.invalidateSize();fit();setTop()},60)}
+  setTop();
+}
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>show(b.dataset.t));
+window.addEventListener("resize",setTop);
+$("#foodtog").checked=true;
+show("1");
+</script>
+</body>
+</html>
